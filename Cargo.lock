@@ -6039,9 +6039,9 @@ dependencies = [
 
 [[package]]
 name = "zen-engine"
-version = "0.49.0"
+version = "0.49.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "637ea4ebd8525a6a2dd3b11e3293a45b61d26d29e8753180213c210388f3a9b2"
+checksum = "04b80b609685342d771698b6604cc7b09c687ea29f0d52cb1114c58c72665598"
 dependencies = [
  "ahash 0.8.11",
  "anyhow",
@@ -6063,9 +6063,9 @@ dependencies = [
 
 [[package]]
 name = "zen-expression"
-version = "0.49.0"
+version = "0.49.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba7c915fcf98de0efc337209b3f0e1b4ac29b06148494596def5208088d7300a"
+checksum = "36062e4c513df937be7092a492263f5f8d2926b7a42fec7b536a06c1e6fdf2cb"
 dependencies = [
  "ahash 0.8.11",
  "anyhow",
@@ -6091,9 +6091,9 @@ dependencies = [
 
 [[package]]
 name = "zen-tmpl"
-version = "0.49.0"
+version = "0.49.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "770496ac01f48464c9fd9ccee0e5e2d7758351ce302a616ba4a60550dc3ae81d"
+checksum = "13e0bd9a6ded92aaeb66f70f5cc638ccda5c51b65934ec461d4a48fecb2e21e3"
 dependencies = [
  "serde",
  "serde_json",

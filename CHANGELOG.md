@@ -1,3 +1,10 @@
+## [1.21.2](https://github.com/gorules/agent/compare/v1.21.1...v1.21.2) (2025-07-04)
+
+
+### Bug Fixes
+
+* update zen engine ([#33](https://github.com/gorules/agent/issues/33)) ([c821f5e](https://github.com/gorules/agent/commit/c821f5e04d539df584544b2edc6c13b5461b0afb))
+
 ## [1.21.1](https://github.com/gorules/agent/compare/v1.21.0...v1.21.1) (2025-07-03)
 
 
