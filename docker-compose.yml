@@ -1,0 +1,22 @@
+services:
+  minio:
+    image: minio/minio
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - './.temp/minio:/data'
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=minio_username
+      - MINIO_ROOT_PASSWORD=minio_password
+      - MINIO_DEFAULT_BUCKETS=bucket
+
+  azure-blob:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    ports:
+      - '10000:10000'
+      - '10001:10001'
+      - '10002:10002'
+    volumes:
+      - ./.temp/azurite:/workspace

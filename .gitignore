@@ -1,0 +1,10 @@
+.DS_Store
+
+/target
+/temp
+/.temp
+/data
+.env
+
+.idea
+node_modules
