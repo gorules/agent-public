@@ -1,3 +1,29 @@
+# [1.22.0](https://github.com/gorules/agent/compare/v1.21.4...v1.22.0) (2025-08-07)
+
+
+### Bug Fixes
+
+* json charset utf8 ([#39](https://github.com/gorules/agent/issues/39)) ([c046a38](https://github.com/gorules/agent/commit/c046a3860261ce64c7839f6a39ff7a24545ba557))
+
+
+### Features
+
+* **GRL-188:** add public-sync workflows ([#37](https://github.com/gorules/agent/issues/37)) ([020af00](https://github.com/gorules/agent/commit/020af009ebbe8c4b8333ad4056154632c69ef6cf))
+
+## [1.21.4](https://github.com/gorules/agent/compare/v1.21.3...v1.21.4) (2025-08-04)
+
+
+### Bug Fixes
+
+* **GRL-164:** correct otel traceparent implementation ([#38](https://github.com/gorules/agent/issues/38)) ([4e68c0d](https://github.com/gorules/agent/commit/4e68c0daf75d73f4169634e17e97b836e6218257))
+
+## [1.21.3](https://github.com/gorules/agent/compare/v1.21.2...v1.21.3) (2025-07-30)
+
+
+### Bug Fixes
+
+* trace context propagation ([c34e13c](https://github.com/gorules/agent/commit/c34e13c8f2f029714dff932a363d0e44fca52331))
+
 ## [1.21.2](https://github.com/gorules/agent/compare/v1.21.1...v1.21.2) (2025-07-04)
 
 

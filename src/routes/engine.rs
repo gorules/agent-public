@@ -55,6 +55,7 @@ pub async fn evaluate(
     Json(payload): Json<EvaluateRequest>,
 ) -> Result<Json<EvaluateResponse>, EvaluateError> {
     let span = Span::current();
+
     span.set_attribute("params.project", project.clone());
     span.set_attribute("params.key", key.clone());
 

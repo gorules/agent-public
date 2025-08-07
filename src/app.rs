@@ -2,8 +2,13 @@ use crate::config::{EnvironmentConfig, GlobalAgentConfig};
 use crate::provider::Agent;
 use crate::routes;
 use axum::extract::DefaultBodyLimit;
+use axum::http::{HeaderValue, header};
+use axum::middleware::map_response;
+use axum::response::Response;
 use axum::{Extension, Router};
 use axum_tracing_opentelemetry::middleware::{OtelAxumLayer, OtelInResponseLayer};
+use opentelemetry::global::set_text_map_propagator;
+use opentelemetry_sdk::propagation::TraceContextPropagator;
 use std::sync::Arc;
 use std::thread::available_parallelism;
 use tokio_util::task::LocalPoolHandle;
@@ -40,11 +45,13 @@ pub async fn create_app(agent: Agent, config: EnvironmentConfig) -> Router<()> {
         .merge(SwaggerUi::new("/api/docs").url("/api.json", openapi))
         .layer(Extension(agent))
         .layer(Extension(local_pool))
-        .layer(DefaultBodyLimit::max(16 * 1024 * 1024));
+        .layer(DefaultBodyLimit::max(16 * 1024 * 1024))
+        .layer(map_response(map_json_charset));
     if config.otel_enabled {
+        set_text_map_propagator(TraceContextPropagator::new());
         app = app
             .layer(OtelInResponseLayer::default())
-            .layer(OtelAxumLayer::default())
+            .layer(OtelAxumLayer::default());
     }
 
     if config.cors_permissive {
@@ -71,4 +78,17 @@ fn openapi() -> utoipa::openapi::OpenApi {
         .build();
 
     utoipa::openapi::OpenApi::new(openapi_info, utoipa::openapi::Paths::new())
+}
+
+async fn map_json_charset(mut response: Response) -> Response {
+    let Some(content_type) = response.headers_mut().get_mut(header::CONTENT_TYPE) else {
+        return response;
+    };
+
+    const APPLICATION_JSON: HeaderValue = HeaderValue::from_static("application/json");
+    if &*content_type == APPLICATION_JSON {
+        *content_type = HeaderValue::from_static("application/json; charset=utf-8");
+    }
+
+    response
 }
