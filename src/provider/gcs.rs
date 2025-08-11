@@ -34,25 +34,37 @@ impl Debug for GcsProvider {
 }
 
 impl GcsProvider {
-    pub async fn new(config: &GcsProviderConfig, global_config: Arc<GlobalAgentConfig>) -> Self {
-        let credentials_contents = BASE64_STANDARD
-            .decode(config.base64_contents.as_str())
-            .expect("Invalid base64 contents");
+    pub async fn new(
+        config: &GcsProviderConfig,
+        global_config: Arc<GlobalAgentConfig>,
+    ) -> anyhow::Result<Self> {
+        let client_config = match &config.base64_contents {
+            Some(base64_contents) => {
+                let credentials_contents = BASE64_STANDARD
+                    .decode(base64_contents)
+                    .context("Invalid base64 contents")?;
 
-        let credentials_file: CredentialsFile =
-            serde_json::from_slice(credentials_contents.as_slice()).expect("Invalid credentials");
+                let credentials_file: CredentialsFile =
+                    serde_json::from_slice(credentials_contents.as_slice())
+                        .context("Invalid credentials")?;
 
-        let client_config = ClientConfig::default()
-            .with_credentials(credentials_file)
-            .await
-            .expect("Invalid credentials");
+                ClientConfig::default()
+                    .with_credentials(credentials_file)
+                    .await
+                    .context("Invalid credentials")?
+            }
+            None => ClientConfig::default()
+                .with_auth()
+                .await
+                .context("Invalid credentials")?,
+        };
 
-        GcsProvider {
+        Ok(GcsProvider {
             client: Arc::new(Client::new(client_config)),
             bucket: Arc::new(config.bucket.to_string()),
             prefix: Prefix::from(config.prefix.clone()),
             global_config,
-        }
+        })
     }
 
     async fn generate_projects(

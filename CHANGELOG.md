@@ -1,3 +1,11 @@
+# [1.23.0](https://github.com/gorules/agent/compare/v1.22.0...v1.23.0) (2025-08-09)
+
+
+### Features
+
+* **GRL-203:** gcs federated identity ([#41](https://github.com/gorules/agent/issues/41)) ([6be41b4](https://github.com/gorules/agent/commit/6be41b4f1c057d5911467757799245473edda3fc))
+* **GRL-204:** azure federated identity ([#40](https://github.com/gorules/agent/issues/40)) ([8ae33c4](https://github.com/gorules/agent/commit/8ae33c45da6950f393d857dd0276c4a76c58c71c))
+
 # [1.22.0](https://github.com/gorules/agent/compare/v1.21.4...v1.22.0) (2025-08-07)
 
 

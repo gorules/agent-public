@@ -89,10 +89,10 @@ impl Agent {
                 AgentProvider::S3(S3Provider::new(config, global_config).await)
             }
             ProviderConfig::AzureStorage(config) => {
-                AgentProvider::AzureStorage(AzureStorageProvider::new(config, global_config))
+                AgentProvider::AzureStorage(AzureStorageProvider::new(config, global_config)?)
             }
             ProviderConfig::GCS(config) => {
-                AgentProvider::GCS(GcsProvider::new(config, global_config).await)
+                AgentProvider::GCS(GcsProvider::new(config, global_config).await?)
             }
         };
 

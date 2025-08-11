@@ -119,13 +119,11 @@ pub struct AzureStorageProviderConfig {
     pub connection_string: String,
     pub container: String,
     pub prefix: Option<String>,
-    #[allow(dead_code)]
-    pub sas_token: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct GcsProviderConfig {
-    pub base64_contents: String,
+    pub base64_contents: Option<String>,
     pub bucket: String,
     pub prefix: Option<String>,
 }

@@ -5,7 +5,8 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use azure_core::prelude::MaxResults;
-use azure_storage::ConnectionString;
+use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+use azure_storage::{ConnectionString, StorageCredentials};
 use azure_storage_blobs::blob::BlobProperties;
 use azure_storage_blobs::container::operations::BlobItem;
 use azure_storage_blobs::prelude::{BlobServiceClient, ContainerClient};
@@ -26,26 +27,39 @@ pub struct AzureStorageProvider {
 }
 
 impl AzureStorageProvider {
-    pub fn new(config: &AzureStorageProviderConfig, global_config: Arc<GlobalAgentConfig>) -> Self {
-        let connection_string =
-            ConnectionString::new(&config.connection_string).expect("Invalid connection string");
+    pub fn new(
+        config: &AzureStorageProviderConfig,
+        global_config: Arc<GlobalAgentConfig>,
+    ) -> anyhow::Result<Self> {
+        let connection_string = ConnectionString::new(&config.connection_string)
+            .context("Invalid connection string")?;
+
+        let credentials = match connection_string.account_key {
+            Some(_) => connection_string
+                .storage_credentials()
+                .context("Invalid storage credentials")?,
+            None => {
+                let credential = DefaultAzureCredential::create(TokenCredentialOptions::default())
+                    .context("Invalid credential")?;
+
+                StorageCredentials::token_credential(Arc::new(credential))
+            }
+        };
 
         let blob_service = BlobServiceClient::new(
             connection_string
                 .account_name
-                .expect("Invalid account name"),
-            connection_string
-                .storage_credentials()
-                .expect("Invalid storage credentials"),
+                .context("Invalid account name")?,
+            credentials,
         );
 
         let container_client = blob_service.container_client(&config.container);
 
-        AzureStorageProvider {
+        Ok(AzureStorageProvider {
             client: container_client,
             prefix: Prefix::from(config.prefix.clone()),
             global_config,
-        }
+        })
     }
 
     async fn generate_projects(
