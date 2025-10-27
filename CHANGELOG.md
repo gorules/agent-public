@@ -1,3 +1,10 @@
+## [1.23.1](https://github.com/gorules/agent/compare/v1.23.0...v1.23.1) (2025-10-22)
+
+
+### Bug Fixes
+
+* **GRL-234:** sonarqube vulnerability ([#42](https://github.com/gorules/agent/issues/42)) ([a2aca3c](https://github.com/gorules/agent/commit/a2aca3ca349453e6bc66e6210b11fa1a922cd4d5))
+
 # [1.23.0](https://github.com/gorules/agent/compare/v1.22.0...v1.23.0) (2025-08-09)
 
 
