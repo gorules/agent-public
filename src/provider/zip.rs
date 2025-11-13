@@ -43,7 +43,7 @@ impl AgentDataProvider for ZipProvider {
         let password = self.global_config.release_zip_password.clone();
 
         async move {
-            let projects = task::spawn_blocking(|| load_from_directory(root, password)).await??;
+            let projects = task::spawn_blocking(|| load_from_directory(root, password)).await?;
             let diff = projects
                 .iter()
                 .map(|project| ProjectDiff::Created(project.key().to_string()))
@@ -58,16 +58,23 @@ impl AgentDataProvider for ZipProvider {
     }
 }
 
-fn load_from_directory(
-    root: PathBuf,
-    password: Option<Arc<str>>,
-) -> anyhow::Result<DashMap<String, Arc<Project>>> {
-    let files = WalkDir::new(root.clone())
+fn load_from_directory(root: PathBuf, password: Option<Arc<str>>) -> DashMap<String, Arc<Project>> {
+    let files = match WalkDir::new(root.clone())
         .max_depth(1)
         .into_iter()
         .filter_ok(|d| d.file_type().is_file())
         .collect::<Result<Vec<_>, _>>()
-        .context("failed to load files")?;
+    {
+        Ok(dirs) => dirs,
+        Err(error) => {
+            tracing::error!(
+                "[Zip -Skip all] Failed to read directory {}: {}",
+                root.display(),
+                error
+            );
+            return DashMap::new();
+        }
+    };
 
     let projects = files
         .iter()
@@ -77,30 +84,67 @@ fn load_from_directory(
                 .to_str()
                 .is_some_and(|s| s.ends_with(".zip"))
         })
-        .map(|entry| {
-            let file_reader = File::open(entry.path()).context("failed to open file")?;
-            let path = entry
-                .path()
-                .strip_prefix(&root)
-                .context("failed to strip file prefix")?
-                .to_string_lossy()
-                .trim_end_matches(".zip")
-                .to_string();
+        .filter_map(|entry| {
+            let file_reader = match File::open(entry.path()).context("failed to open file") {
+                Ok(file_reader) => file_reader,
+                Err(err) => {
+                    tracing::error!(
+                        "[Zip -Skip] failed to open zip file {}: {}",
+                        entry.path().display(),
+                        err
+                    );
+                    return None;
+                }
+            };
+            let path = match entry.path().strip_prefix(&root) {
+                Ok(stripped) => stripped
+                    .to_string_lossy()
+                    .trim_end_matches(".zip")
+                    .to_string(),
+                Err(err) => {
+                    tracing::error!(
+                        "[Zip -Skip] failed to strip prefix on {}: {}",
+                        entry.path().display(),
+                        err
+                    );
+                    return None;
+                }
+            };
 
             let archive = ProtectedZipArchive {
-                archive: ZipArchive::new(file_reader).context("failed to load zip archive")?,
+                archive: match ZipArchive::new(file_reader) {
+                    Ok(archive) => archive,
+                    Err(err) => {
+                        tracing::error!(
+                            "[Zip -Skip] failed unpack zip archive {}: {}",
+                            entry.path().display(),
+                            err
+                        );
+                        return None;
+                    }
+                },
                 password: password.clone(),
             };
 
-            Ok((
+            Some((
                 path,
                 Arc::new(Project {
-                    engine: ImmutableLoader::try_from(archive)?.into_engine(),
+                    engine: match ImmutableLoader::try_from(archive) {
+                        Ok(loader) => loader.into_engine(),
+                        Err(err) => {
+                            tracing::error!(
+                                "[Zip -Skip] failed load into engine {}: {}",
+                                entry.path().display(),
+                                err
+                            );
+                            return None;
+                        }
+                    },
                     content_hash: None,
                 }),
             ))
         })
-        .collect::<anyhow::Result<DashMap<_, _>>>();
+        .collect::<DashMap<_, _>>();
 
     projects
 }

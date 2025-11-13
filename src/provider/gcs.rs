@@ -3,6 +3,13 @@ use std::future::Future;
 use std::io::Cursor;
 use std::sync::Arc;
 
+use crate::Agent;
+use crate::config::{GcsProviderConfig, GlobalAgentConfig};
+use crate::immutable_loader::{ImmutableLoader, ProtectedZipArchive};
+use crate::provider::{
+    AgentData, AgentDataProvider, FailedProjectsRegistry, Project, ProjectData, ProjectDiff,
+};
+use crate::util::prefix::Prefix;
 use anyhow::Context;
 use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
@@ -13,11 +20,6 @@ use google_cloud_storage::client::{Client, ClientConfig};
 use google_cloud_storage::http::objects::get::GetObjectRequest;
 use google_cloud_storage::http::objects::list::ListObjectsRequest;
 use zip::ZipArchive;
-
-use crate::config::{GcsProviderConfig, GlobalAgentConfig};
-use crate::immutable_loader::{ImmutableLoader, ProtectedZipArchive};
-use crate::provider::{AgentData, AgentDataProvider, Project, ProjectData, ProjectDiff};
-use crate::util::prefix::Prefix;
 
 #[derive(Clone)]
 pub struct GcsProvider {
@@ -67,10 +69,7 @@ impl GcsProvider {
         })
     }
 
-    async fn generate_projects(
-        &self,
-        keys: Vec<String>,
-    ) -> anyhow::Result<DashMap<String, Arc<Project>>> {
+    async fn generate_projects(&self, keys: Vec<String>) -> DashMap<String, Arc<Project>> {
         let array = futures::stream::iter(keys.into_iter())
             .map(|key| {
                 let client = self.client.clone();
@@ -80,29 +79,67 @@ impl GcsProvider {
                 async move {
                     let object_request = GetObjectRequest {
                         bucket: bucket.to_string(),
-                        object: object_key,
+                        object: object_key.clone(),
                         ..Default::default()
                     };
 
-                    let object = client
-                        .get_object(&object_request)
-                        .await
-                        .context("failed to get object")?;
+                    let object = match client.get_object(&object_request).await {
+                        Ok(object) => object,
+                        Err(e) => {
+                            tracing::error!(
+                                "[GCS - SKIP] Failed to get object {}: {}",
+                                object_key,
+                                e
+                            );
+                            return None;
+                        }
+                    };
 
-                    let data = client
+                    let data = match client
                         .download_object(&object_request, &Default::default())
                         .await
-                        .context("failed to get download object")?;
+                    {
+                        Ok(downloaded_object) => downloaded_object,
+                        Err(e) => {
+                            tracing::error!(
+                                "[GCS - SKIP] Failed to download object {}: {}",
+                                object_key,
+                                e
+                            );
+                            return None;
+                        }
+                    };
 
                     let cursor = Cursor::new(data);
                     let archive = ProtectedZipArchive {
-                        archive: ZipArchive::new(cursor).unwrap(),
+                        archive: match ZipArchive::new(cursor) {
+                            Ok(archive) => archive,
+                            Err(err) => {
+                                tracing::error!(
+                                    "[GCS - SKIP] failed unpack zip archive {}: {}",
+                                    object_key,
+                                    err
+                                );
+                                return None;
+                            }
+                        },
                         password: self.global_config.release_zip_password.clone(),
                     };
 
-                    let engine = ImmutableLoader::try_from(archive).unwrap().into_engine();
+                    let engine = match ImmutableLoader::try_from(archive) {
+                        Ok(loader) => loader.into_engine(),
+                        Err(err) => {
+                            tracing::error!(
+                                "[GCS - SKIP] failed load into engine {}: {}",
+                                object_key,
+                                err
+                            );
+                            FailedProjectsRegistry::insert(object.etag.into_bytes());
+                            return None;
+                        }
+                    };
 
-                    Ok((
+                    Some((
                         key,
                         Arc::new(Project {
                             engine,
@@ -112,12 +149,11 @@ impl GcsProvider {
                 }
             })
             .buffered(100)
-            .collect::<Vec<anyhow::Result<(String, Arc<Project>)>>>()
+            .filter_map(|result| async { result })
+            .collect::<Vec<(String, Arc<Project>)>>()
             .await;
 
-        array
-            .into_iter()
-            .collect::<anyhow::Result<DashMap<String, Arc<Project>>>>()
+        array.into_iter().collect::<DashMap<String, Arc<Project>>>()
     }
 }
 
@@ -148,36 +184,23 @@ impl AgentDataProvider for GcsProvider {
                     key: this.prefix.strip(obj.name.as_str().into()).into_owned(),
                     content_hash: Some(obj.etag.clone().into_bytes()),
                 })
+                .filter_map(|proj_data| {
+                    if FailedProjectsRegistry::has_failed(proj_data.content_hash.as_deref()) {
+                        return None;
+                    }
+                    if proj_data.key.is_empty() {
+                        return None;
+                    }
+                    Some(proj_data)
+                })
                 .collect::<Vec<_>>();
 
             let diff = data.calculate_diff(project_datum);
-            let to_refresh = diff
-                .iter()
-                .filter_map(|c| match c {
-                    ProjectDiff::Created(key) | ProjectDiff::Updated(key) => Some(key.to_string()),
-                    ProjectDiff::Removed(_) => None,
-                })
-                .collect::<Vec<String>>();
+            let to_refresh = Agent::get_refresh_list(&diff);
 
-            let refreshed_projects = this.generate_projects(to_refresh).await?;
-            diff.iter()
-                .try_for_each::<_, anyhow::Result<()>>(|change| match change {
-                    ProjectDiff::Created(key) | ProjectDiff::Updated(key) => {
-                        data.projects.insert(
-                            key.to_string(),
-                            refreshed_projects
-                                .get(key)
-                                .context("key should be fetched")?
-                                .clone(),
-                        );
+            let refreshed_projects = this.generate_projects(to_refresh).await;
 
-                        Ok(())
-                    }
-                    ProjectDiff::Removed(key) => {
-                        data.projects.remove(key);
-                        Ok(())
-                    }
-                })?;
+            let diff = Agent::get_diff_result(data, diff, refreshed_projects);
 
             Ok(diff)
         }

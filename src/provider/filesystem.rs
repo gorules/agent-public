@@ -41,7 +41,14 @@ impl AgentDataProvider for FilesystemProvider {
 
         async move {
             let projects = task::spawn_blocking(move || {
-                let directory = fs::read_dir(root.clone()).context("failed to read directory")?;
+                let directory = match fs::read_dir(root.clone()) {
+                    Ok(dir) => dir,
+                    Err(error) => {
+                        println!("[FS - Skip] Failed to read directory: {}", error);
+                        return DashMap::new();
+                    }
+                };
+
                 let paths = directory
                     .into_iter()
                     .filter_map(|d| {
@@ -59,19 +66,39 @@ impl AgentDataProvider for FilesystemProvider {
 
                 paths
                     .into_iter()
-                    .map(|directory| {
-                        let relative_path = directory
-                            .strip_prefix(root.clone())
-                            .context("failed to extract prefix from project")?;
+                    .filter_map(|directory| {
+                        let relative_path = match directory.strip_prefix(root.clone()) {
+                            Ok(ok) => ok,
+                            Err(err) => {
+                                tracing::error!(
+                                    "[FS - Skip] failed to strip prefix on {}: {}",
+                                    directory.display(),
+                                    err
+                                );
+                                return None;
+                            }
+                        };
 
-                        Ok((
+                        let project = match load_from_directory(&directory) {
+                            Ok(ok) => ok,
+                            Err(err) => {
+                                tracing::error!(
+                                    "[FS - Skip] failed to load project from directory {}: {}",
+                                    directory.display(),
+                                    err
+                                );
+                                return None;
+                            }
+                        };
+
+                        Some((
                             relative_path.to_string_lossy().to_string(),
-                            Arc::new(load_from_directory(directory)?),
+                            Arc::new(project),
                         ))
                     })
-                    .collect::<anyhow::Result<DashMap<_, _>>>()
+                    .collect::<DashMap<_, _>>()
             })
-            .await??;
+            .await?;
 
             let diff = projects
                 .iter()
@@ -87,7 +114,7 @@ impl AgentDataProvider for FilesystemProvider {
     }
 }
 
-fn load_from_directory(root: PathBuf) -> anyhow::Result<Project> {
+fn load_from_directory(root: &PathBuf) -> anyhow::Result<Project> {
     let files = WalkDir::new(root.clone())
         .into_iter()
         .filter_ok(|d| d.file_type().is_file())

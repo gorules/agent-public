@@ -1,8 +1,10 @@
-use std::future::Future;
-use std::io::Cursor;
-use std::num::NonZeroU32;
-use std::sync::Arc;
-
+use crate::Agent;
+use crate::config::{AzureStorageProviderConfig, GlobalAgentConfig};
+use crate::immutable_loader::{ImmutableLoader, ProtectedZipArchive};
+use crate::provider::{
+    AgentData, AgentDataProvider, FailedProjectsRegistry, Project, ProjectData, ProjectDiff,
+};
+use crate::util::prefix::Prefix;
 use anyhow::Context;
 use azure_core::prelude::MaxResults;
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
@@ -12,12 +14,11 @@ use azure_storage_blobs::container::operations::BlobItem;
 use azure_storage_blobs::prelude::{BlobServiceClient, ContainerClient};
 use dashmap::DashMap;
 use futures::StreamExt;
+use std::future::Future;
+use std::io::Cursor;
+use std::num::NonZeroU32;
+use std::sync::Arc;
 use zip::ZipArchive;
-
-use crate::config::{AzureStorageProviderConfig, GlobalAgentConfig};
-use crate::immutable_loader::{ImmutableLoader, ProtectedZipArchive};
-use crate::provider::{AgentData, AgentDataProvider, Project, ProjectData, ProjectDiff};
-use crate::util::prefix::Prefix;
 
 #[derive(Clone, Debug)]
 pub struct AzureStorageProvider {
@@ -62,10 +63,7 @@ impl AzureStorageProvider {
         })
     }
 
-    async fn generate_projects(
-        &self,
-        keys: Vec<String>,
-    ) -> anyhow::Result<DashMap<String, Arc<Project>>> {
+    async fn generate_projects(&self, keys: Vec<String>) -> DashMap<String, Arc<Project>> {
         let array = futures::stream::iter(keys.into_iter())
             .map(|key| {
                 let client = self.client.clone();
@@ -76,24 +74,68 @@ impl AzureStorageProvider {
                     let mut stream = blob_client.get().chunk_size(0x2000u64).into_stream();
                     let mut content_hash = None;
                     while let Some(maybe_value) = stream.next().await {
-                        let value = maybe_value?;
+                        let value = match maybe_value {
+                            Ok(val) => val,
+                            Err(e) => {
+                                tracing::error!(
+                                    "[AZURE - SKIP] Failed to get blob chunk {}: {}",
+                                    key,
+                                    e
+                                );
+                                return None;
+                            }
+                        };
                         if content_hash.is_none() {
                             content_hash = extract_hash(&value.blob.properties);
                         }
 
-                        let data = value.data.collect().await?;
+                        let data = match value.data.collect().await {
+                            Ok(data) => data,
+                            Err(e) => {
+                                tracing::error!(
+                                    "[AZURE - SKIP] Failed to collect blob data {}: {}",
+                                    key,
+                                    e
+                                );
+                                return None;
+                            }
+                        };
                         complete_response.extend(&data);
                     }
 
                     let cursor = Cursor::new(complete_response);
                     let archive = ProtectedZipArchive {
-                        archive: ZipArchive::new(cursor).unwrap(),
+                        archive: match ZipArchive::new(cursor) {
+                            Ok(archive) => archive,
+                            Err(err) => {
+                                tracing::error!(
+                                    "[AZURE - SKIP] failed unpack zip archive {}: {}",
+                                    key,
+                                    err
+                                );
+                                return None;
+                            }
+                        },
                         password: self.global_config.release_zip_password.clone(),
                     };
 
-                    let engine = ImmutableLoader::try_from(archive).unwrap().into_engine();
+                    let engine = match ImmutableLoader::try_from(archive) {
+                        Ok(loader) => loader.into_engine(),
+                        Err(err) => {
+                            tracing::error!(
+                                "[AZURE - SKIP] failed load into engine {}: {}",
+                                key,
+                                err
+                            );
+                            match content_hash {
+                                Some(etag) => FailedProjectsRegistry::insert(etag),
+                                None => (),
+                            }
+                            return None;
+                        }
+                    };
 
-                    Ok((
+                    Some((
                         key,
                         Arc::new(Project {
                             engine,
@@ -103,12 +145,11 @@ impl AzureStorageProvider {
                 }
             })
             .buffered(100)
-            .collect::<Vec<anyhow::Result<(String, Arc<Project>)>>>()
+            .filter_map(|result| async { result })
+            .collect::<Vec<(String, Arc<Project>)>>()
             .await;
 
-        array
-            .into_iter()
-            .collect::<anyhow::Result<DashMap<String, Arc<Project>>>>()
+        array.into_iter().collect::<DashMap<String, Arc<Project>>>()
     }
 }
 
@@ -134,46 +175,31 @@ impl AgentDataProvider for AzureStorageProvider {
             let mut project_datum: Vec<ProjectData> = Vec::new();
             while let Some(response) = stream.next().await {
                 let items = response?.blobs.items;
-                let blobs = items.iter().filter_map(|blob_item| match blob_item {
-                    BlobItem::Blob(blob) => Some(ProjectData {
-                        key: this.prefix.strip(blob.name.as_str().into()).into_owned(),
-                        content_hash: extract_hash(&blob.properties),
-                    }),
-                    BlobItem::BlobPrefix(_) => None,
-                });
+                let blobs = items
+                    .iter()
+                    .filter_map(|blob_item| match blob_item {
+                        BlobItem::Blob(blob) => Some(ProjectData {
+                            key: this.prefix.strip(blob.name.as_str().into()).into_owned(),
+                            content_hash: extract_hash(&blob.properties),
+                        }),
+                        BlobItem::BlobPrefix(_) => None,
+                    })
+                    .filter_map(|proj_data| {
+                        if FailedProjectsRegistry::has_failed(proj_data.content_hash.as_deref()) {
+                            return None;
+                        }
+                        Some(proj_data)
+                    });
 
                 project_datum.extend(blobs);
             }
 
             let diff = data.calculate_diff(project_datum);
 
-            let to_refresh = diff
-                .iter()
-                .filter_map(|c| match c {
-                    ProjectDiff::Created(key) | ProjectDiff::Updated(key) => Some(key.to_string()),
-                    ProjectDiff::Removed(_) => None,
-                })
-                .collect::<Vec<String>>();
+            let to_refresh = Agent::get_refresh_list(&diff);
 
-            let refreshed_projects = this.generate_projects(to_refresh).await?;
-            diff.iter()
-                .try_for_each::<_, anyhow::Result<()>>(|change| match change {
-                    ProjectDiff::Created(key) | ProjectDiff::Updated(key) => {
-                        data.projects.insert(
-                            key.to_string(),
-                            refreshed_projects
-                                .get(key)
-                                .context("key should be fetched")?
-                                .clone(),
-                        );
-
-                        Ok(())
-                    }
-                    ProjectDiff::Removed(key) => {
-                        data.projects.remove(key);
-                        Ok(())
-                    }
-                })?;
+            let refreshed_projects = this.generate_projects(to_refresh).await;
+            let diff = Agent::get_diff_result(data, diff, refreshed_projects);
 
             Ok(diff)
         }

@@ -1,3 +1,10 @@
+## [1.23.2](https://github.com/gorules/agent/compare/v1.23.1...v1.23.2) (2025-11-12)
+
+
+### Bug Fixes
+
+* resilient project loading ([#36](https://github.com/gorules/agent/issues/36)) ([be12f9a](https://github.com/gorules/agent/commit/be12f9aa743cfac78a93cca12ae50260c2ef6e40))
+
 ## [1.23.1](https://github.com/gorules/agent/compare/v1.23.0...v1.23.1) (2025-10-22)
 
 

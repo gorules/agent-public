@@ -2,18 +2,19 @@ use std::future::Future;
 use std::io::Cursor;
 use std::sync::Arc;
 
-use anyhow::Context;
+use crate::Agent;
+use crate::config::{GlobalAgentConfig, S3ProviderConfig};
+use crate::immutable_loader::{ImmutableLoader, ProtectedZipArchive};
+use crate::provider::{
+    AgentData, AgentDataProvider, FailedProjectsRegistry, Project, ProjectData, ProjectDiff,
+};
+use crate::util::prefix::Prefix;
 use aws_config::default_provider::credentials::DefaultCredentialsChain;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_s3::Client;
 use dashmap::DashMap;
 use futures::StreamExt;
 use zip::ZipArchive;
-
-use crate::config::{GlobalAgentConfig, S3ProviderConfig};
-use crate::immutable_loader::{ImmutableLoader, ProtectedZipArchive};
-use crate::provider::{AgentData, AgentDataProvider, Project, ProjectData, ProjectDiff};
-use crate::util::prefix::Prefix;
 
 #[derive(Clone, Debug)]
 pub struct S3Provider {
@@ -52,40 +53,65 @@ impl S3Provider {
         }
     }
 
-    async fn generate_projects(
-        &self,
-        keys: Vec<String>,
-    ) -> anyhow::Result<DashMap<String, Arc<Project>>> {
+    async fn generate_projects(&self, keys: Vec<String>) -> DashMap<String, Arc<Project>> {
         let array = futures::stream::iter(keys.into_iter())
             .map(|key| {
                 let client = self.client.clone();
                 let bucket = self.bucket.clone();
 
                 async move {
-                    let object = client
+                    let object = match client
                         .clone()
                         .get_object()
                         .bucket(bucket.as_str())
                         .key(self.prefix.prepend(key.as_str().into()))
                         .send()
                         .await
-                        .context("failed to load object")?;
+                    {
+                        Ok(object) => object,
+                        Err(e) => {
+                            tracing::error!("[S3 - SKIP] Failed to get object {}: {}", key, e);
+                            return None;
+                        }
+                    };
 
-                    let bdy = object
-                        .body
-                        .collect()
-                        .await
-                        .context("failed to read object")?;
+                    let bdy = match object.body.collect().await {
+                        Ok(bdy) => bdy,
+                        Err(e) => {
+                            tracing::error!("[S3 - SKIP] Failed to get object body {}: {}", key, e);
+                            return None;
+                        }
+                    };
 
                     let cursor = Cursor::new(bdy.to_vec());
                     let archive = ProtectedZipArchive {
-                        archive: ZipArchive::new(cursor).unwrap(),
+                        archive: match ZipArchive::new(cursor) {
+                            Ok(archive) => archive,
+                            Err(err) => {
+                                tracing::error!(
+                                    "[S3 - SKIP] failed unpack zip archive {}: {}",
+                                    key,
+                                    err
+                                );
+                                return None;
+                            }
+                        },
                         password: self.global_config.release_zip_password.clone(),
                     };
 
-                    let engine = ImmutableLoader::try_from(archive).unwrap().into_engine();
+                    let engine = match ImmutableLoader::try_from(archive) {
+                        Ok(loader) => loader.into_engine(),
+                        Err(err) => {
+                            tracing::error!("[S3 - SKIP] failed load into engine {}: {}", key, err);
+                            match object.e_tag.map(|t| t.into_bytes()) {
+                                Some(etag) => FailedProjectsRegistry::insert(etag),
+                                None => (),
+                            }
+                            return None;
+                        }
+                    };
 
-                    Ok((
+                    Some((
                         key,
                         Arc::new(Project {
                             engine,
@@ -95,12 +121,11 @@ impl S3Provider {
                 }
             })
             .buffered(100)
-            .collect::<Vec<anyhow::Result<(String, Arc<Project>)>>>()
+            .filter_map(|result| async { result })
+            .collect::<Vec<(String, Arc<Project>)>>()
             .await;
 
-        array
-            .into_iter()
-            .collect::<anyhow::Result<DashMap<String, Arc<Project>>>>()
+        array.into_iter().collect::<DashMap<String, Arc<Project>>>()
     }
 }
 
@@ -134,39 +159,20 @@ impl AgentDataProvider for S3Provider {
                     }
 
                     let content_hash = obj.e_tag.map(|t| t.into_bytes());
+                    if FailedProjectsRegistry::has_failed(content_hash.as_deref()) {
+                        return None;
+                    }
                     Some(ProjectData { key, content_hash })
                 })
                 .collect();
 
             let diff = data.calculate_diff(project_datum);
 
-            let to_refresh = diff
-                .iter()
-                .filter_map(|c| match c {
-                    ProjectDiff::Created(key) | ProjectDiff::Updated(key) => Some(key.to_string()),
-                    ProjectDiff::Removed(_) => None,
-                })
-                .collect::<Vec<String>>();
+            let to_refresh = Agent::get_refresh_list(&diff);
 
-            let refreshed_projects = this.generate_projects(to_refresh).await?;
-            diff.iter()
-                .try_for_each::<_, anyhow::Result<()>>(|change| match change {
-                    ProjectDiff::Created(key) | ProjectDiff::Updated(key) => {
-                        data.projects.insert(
-                            key.to_string(),
-                            refreshed_projects
-                                .get(key)
-                                .context("key should be fetched")?
-                                .clone(),
-                        );
+            let refreshed_projects = this.generate_projects(to_refresh).await;
 
-                        Ok(())
-                    }
-                    ProjectDiff::Removed(key) => {
-                        data.projects.remove(key);
-                        Ok(())
-                    }
-                })?;
+            let diff = Agent::get_diff_result(data, diff, refreshed_projects);
 
             Ok(diff)
         }

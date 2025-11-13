@@ -4,7 +4,8 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use chrono::{DateTime, SecondsFormat, Utc};
-use dashmap::DashMap;
+use dashmap::{DashMap, DashSet};
+use std::sync::OnceLock;
 use strum_macros::AsRefStr;
 use tokio::time::Instant;
 use tokio::{task, time};
@@ -112,6 +113,44 @@ impl Agent {
         agent.register_refresh_data();
 
         Ok(agent)
+    }
+
+    pub fn get_refresh_list(diff: &Vec<ProjectDiff>) -> Vec<String> {
+        diff.iter()
+            .filter_map(|c| match c {
+                ProjectDiff::Created(key) | ProjectDiff::Updated(key) => Some(key.to_string()),
+                ProjectDiff::Removed(_) => None,
+            })
+            .collect::<Vec<String>>()
+    }
+
+    pub fn get_diff_result(
+        data: Arc<AgentData>,
+        diff: Vec<ProjectDiff>,
+        refreshed_projects: DashMap<String, Arc<Project>>,
+    ) -> Vec<ProjectDiff> {
+        let diff = diff
+            .into_iter()
+            .filter_map(|change| match &change {
+                ProjectDiff::Created(key) | ProjectDiff::Updated(key) => {
+                    match refreshed_projects.get(key) {
+                        Some(project) => {
+                            data.projects.insert(key.to_string(), project.clone());
+                            Some(change)
+                        }
+                        None => {
+                            data.projects.remove(key);
+                            None
+                        }
+                    }
+                }
+                ProjectDiff::Removed(key) => {
+                    data.projects.remove(key);
+                    Some(change)
+                }
+            })
+            .collect::<Vec<_>>();
+        diff
     }
 
     pub fn project(&self, project: &str) -> Option<Arc<Project>> {
@@ -254,6 +293,24 @@ pub enum ProjectDiff {
 pub struct ProjectData {
     pub key: String,
     pub content_hash: Option<Vec<u8>>,
+}
+
+static FAILED_PROJECTS: OnceLock<DashSet<Vec<u8>>> = OnceLock::new();
+
+pub struct FailedProjectsRegistry;
+
+impl FailedProjectsRegistry {
+    fn instance() -> &'static DashSet<Vec<u8>> {
+        FAILED_PROJECTS.get_or_init(|| DashSet::new())
+    }
+
+    pub fn insert(project_hash: Vec<u8>) {
+        Self::instance().insert(project_hash);
+    }
+
+    pub fn has_failed(project_hash: Option<&[u8]>) -> bool {
+        project_hash.map_or(false, |hash| Self::instance().contains(hash))
+    }
 }
 
 fn rounded_instant(target_duration: Duration) -> (SystemTime, Instant) {
