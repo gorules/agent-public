@@ -10,11 +10,9 @@ use strum_macros::AsRefStr;
 use tokio::time::Instant;
 use tokio::{task, time};
 use zen_engine::DecisionEngine;
-use zen_engine::handler::custom_node_adapter::NoopCustomNode;
 
 use crate::config::{EnvironmentConfig, GlobalAgentConfig, ProviderConfig};
 use crate::engine_ext::EngineExtension;
-use crate::immutable_loader::ImmutableLoader;
 use crate::provider::azure_storage::AzureStorageProvider;
 use crate::provider::filesystem::FilesystemProvider;
 use crate::provider::gcs::GcsProvider;
@@ -231,7 +229,7 @@ impl Agent {
     }
 }
 
-type AgentDecisionEngine = DecisionEngine<ImmutableLoader, NoopCustomNode>;
+type AgentDecisionEngine = DecisionEngine;
 
 #[derive(Debug)]
 pub struct Project {

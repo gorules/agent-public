@@ -1,3 +1,11 @@
+## [1.23.3](https://github.com/gorules/agent/compare/v1.23.2...v1.23.3) (2025-11-25)
+
+
+### Bug Fixes
+
+* **GRL-291:** Upgrade zen to latest version ([#43](https://github.com/gorules/agent/issues/43)) ([30de890](https://github.com/gorules/agent/commit/30de89090bf5acf912e48b838b69d79c6d91b788))
+* **GRL-298:** dependencies update ([#44](https://github.com/gorules/agent/issues/44)) ([e8761d2](https://github.com/gorules/agent/commit/e8761d2aa3a38267395a2a5ced90c411c599805c))
+
 ## [1.23.2](https://github.com/gorules/agent/compare/v1.23.1...v1.23.2) (2025-11-12)
 
 

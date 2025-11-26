@@ -94,12 +94,13 @@ pub async fn evaluate(
                     &cloned_key,
                     payload.context.into(),
                     EvaluationOptions {
-                        trace: payload.trace,
-                        max_depth: Some(10),
+                        trace: payload.trace.unwrap_or(false),
+                        max_depth: 10,
                     },
                 )
                 .await
                 .map(|s| serde_json::to_value(s).context("Failed to serialize value"))
+                .map_err(|e| anyhow::Error::msg(e.to_string()))
         })
         .await
         .expect("Thread failed to join");

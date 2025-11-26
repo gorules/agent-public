@@ -5,13 +5,13 @@ use std::io::{Read, Seek};
 use std::ops::{Deref, DerefMut};
 use std::os::unix::ffi::OsStrExt;
 use std::path::Component;
+use std::pin::Pin;
 use std::sync::Arc;
 
 use crate::data::extended_decision::ExtendedDecisionContent;
 use crate::data::release_data::ReleaseData;
 use anyhow::anyhow;
 use zen_engine::DecisionEngine;
-use zen_engine::handler::custom_node_adapter::NoopCustomNode;
 use zen_engine::loader::{DecisionLoader, LoaderError, LoaderResponse};
 use zip::ZipArchive;
 use zip::read::ZipFile;
@@ -34,7 +34,7 @@ impl ImmutableLoader {
         }
     }
 
-    pub fn into_engine(self) -> DecisionEngine<ImmutableLoader, NoopCustomNode> {
+    pub fn into_engine(self) -> DecisionEngine {
         DecisionEngine::default().with_loader(Arc::new(self))
     }
 
@@ -54,15 +54,18 @@ impl ImmutableLoader {
 }
 
 impl DecisionLoader for ImmutableLoader {
-    fn load<'a>(&'a self, key: &'a str) -> impl Future<Output = LoaderResponse> + 'a {
-        async move {
+    fn load<'a>(
+        &'a self,
+        key: &'a str,
+    ) -> Pin<Box<dyn Future<Output = LoaderResponse> + Send + 'a>> {
+        Box::pin(async move {
             let lower_key = key.to_lowercase();
             let Some(data) = self.content.get(lower_key.as_str()) else {
-                return Err(Box::new(LoaderError::NotFound(lower_key)));
+                return Err(LoaderError::NotFound(lower_key));
             };
 
             Ok(data.content.clone())
-        }
+        })
     }
 }
 
