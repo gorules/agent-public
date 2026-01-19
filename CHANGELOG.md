@@ -1,3 +1,10 @@
+## [1.23.4](https://github.com/gorules/agent/compare/v1.23.3...v1.23.4) (2026-01-19)
+
+
+### Bug Fixes
+
+* **GRL-354:** upgrade zen engine ([#45](https://github.com/gorules/agent/issues/45)) ([dbd5cc7](https://github.com/gorules/agent/commit/dbd5cc71e6ad455dc0cf1c2e176e6c58536fd6f7))
+
 ## [1.23.3](https://github.com/gorules/agent/compare/v1.23.2...v1.23.3) (2025-11-25)
 
 
