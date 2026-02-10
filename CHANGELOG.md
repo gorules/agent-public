@@ -1,3 +1,10 @@
+## [1.23.5](https://github.com/gorules/agent/compare/v1.23.4...v1.23.5) (2026-02-10)
+
+
+### Bug Fixes
+
+* **GRL-382:** fix testcontainers dependency ([59fd5fb](https://github.com/gorules/agent/commit/59fd5fb7410c9e6dd1580613e5c309904931b0a7))
+
 ## [1.23.4](https://github.com/gorules/agent/compare/v1.23.3...v1.23.4) (2026-01-19)
 
 

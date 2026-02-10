@@ -59,7 +59,7 @@ axum-tracing-opentelemetry = { version = "0.29", features = ["tracing_level_info
 tracing-opentelemetry = { version = "0.31", features = ["metrics"] }
 
 [dev-dependencies]
-testcontainers = "0.23"
+testcontainers = "0.25.2"
 urlencoding = "2.1.3"
 
 [profile.release]
