@@ -8,7 +8,7 @@ use std::path::Component;
 use std::pin::Pin;
 use std::sync::Arc;
 
-use crate::data::extended_decision::ExtendedDecisionContent;
+use crate::data::extended_decision::{FileContent, FileDecisionGraph};
 use crate::data::release_data::ReleaseData;
 use anyhow::anyhow;
 use zen_engine::DecisionEngine;
@@ -20,12 +20,12 @@ use zip::result::ZipResult;
 #[derive(Default, Debug)]
 pub struct ImmutableLoader {
     release_data: Option<ReleaseData>,
-    content: HashMap<String, ExtendedDecisionContent>,
+    content: HashMap<String, FileDecisionGraph>,
 }
 
 impl ImmutableLoader {
     pub fn new(
-        content: HashMap<String, ExtendedDecisionContent>,
+        content: HashMap<String, FileDecisionGraph>,
         release_data: Option<ReleaseData>,
     ) -> Self {
         Self {
@@ -154,15 +154,18 @@ where
                 }
 
                 let name = file_reader.name().to_lowercase();
-                let Ok(content) =
-                    serde_json::from_reader::<_, ExtendedDecisionContent>(file_reader)
-                else {
+                let Ok(content) = serde_json::from_reader::<_, FileContent>(file_reader) else {
                     return Some(Err(anyhow!(
                         "failed to parse decision content for file {name}",
                     )));
                 };
 
-                Some(Ok((name, content)))
+                let graph_content = match content {
+                    FileContent::Graph(graph) => graph,
+                    FileContent::Unknown => return None,
+                };
+
+                Some(Ok((name, graph_content)))
             })
             .collect::<Result<HashMap<_, _>, _>>();
 

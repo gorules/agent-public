@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::{env, fs};
 
 use crate::config::{FilesystemProviderConfig, GlobalAgentConfig};
-use crate::data::extended_decision::ExtendedDecisionContent;
+use crate::data::extended_decision::{FileContent, FileDecisionGraph};
 use crate::data::release_data::ReleaseData;
 use crate::immutable_loader::ImmutableLoader;
 use crate::provider::{AgentData, AgentDataProvider, Project, ProjectDiff};
@@ -142,7 +142,7 @@ fn load_from_directory(root: &PathBuf) -> anyhow::Result<Project> {
         })
         .map(|entry| {
             let file_reader = File::open(entry.path()).context("failed to open file")?;
-            let content: ExtendedDecisionContent = serde_json::from_reader(file_reader)?;
+            let content: FileContent = serde_json::from_reader(file_reader)?;
 
             let relative_path = entry
                 .path()
@@ -151,7 +151,16 @@ fn load_from_directory(root: &PathBuf) -> anyhow::Result<Project> {
 
             Ok((relative_path.to_string_lossy().to_string(), content))
         })
-        .collect::<anyhow::Result<HashMap<String, ExtendedDecisionContent>>>();
+        .filter_map(
+            |result: anyhow::Result<(String, FileContent)>| match result {
+                Ok((path, content)) => match content {
+                    FileContent::Graph(graph) => Some(Ok((path, graph))),
+                    FileContent::Unknown => None,
+                },
+                Err(err) => Some(Err(err)),
+            },
+        )
+        .collect::<anyhow::Result<HashMap<String, FileDecisionGraph>>>();
 
     Ok(Project {
         engine: ImmutableLoader::new(projects?, release_data).into_engine(),

@@ -1,3 +1,24 @@
+## [1.24.2](https://github.com/gorules/agent/compare/v1.24.1...v1.24.2) (2026-03-04)
+
+
+### Bug Fixes
+
+* **GRL-406:** resolve glibc issue improve resilience ([#50](https://github.com/gorules/agent/issues/50)) ([968a1e8](https://github.com/gorules/agent/commit/968a1e837d01bc0522f5a34bc6641e4077a17294))
+
+## [1.24.1](https://github.com/gorules/agent/compare/v1.24.0...v1.24.1) (2026-03-03)
+
+
+### Bug Fixes
+
+* **GRL-404:** update rust ([#49](https://github.com/gorules/agent/issues/49)) ([b139ec4](https://github.com/gorules/agent/commit/b139ec4536758b5dbbf288623ff745a22f7db730))
+
+# [1.24.0](https://github.com/gorules/agent/compare/v1.23.5...v1.24.0) (2026-03-03)
+
+
+### Features
+
+* **GRL-402:** add support for new fs structure ([#48](https://github.com/gorules/agent/issues/48)) ([0b8f088](https://github.com/gorules/agent/commit/0b8f088629abccb21d17f441b1ee46aa08012639))
+
 ## [1.23.5](https://github.com/gorules/agent/compare/v1.23.4...v1.23.5) (2026-02-10)
 
 
