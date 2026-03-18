@@ -1,3 +1,10 @@
+# [1.25.0](https://github.com/gorules/agent/compare/v1.24.2...v1.25.0) (2026-03-17)
+
+
+### Features
+
+* **GRL-441:** endpoint for list of entrypoints ([#51](https://github.com/gorules/agent/issues/51)) ([95fad55](https://github.com/gorules/agent/commit/95fad55289254dbb3682a59c17ed32a17363dc9c))
+
 ## [1.24.2](https://github.com/gorules/agent/compare/v1.24.1...v1.24.2) (2026-03-04)
 
 

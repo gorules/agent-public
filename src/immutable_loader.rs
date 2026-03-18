@@ -46,6 +46,10 @@ impl ImmutableLoader {
         self.content.get(path)?.meta.version_id.clone()
     }
 
+    pub fn decision_keys(&self) -> Vec<String> {
+        self.content.keys().cloned().collect()
+    }
+
     pub fn can_access(&self, token: &str) -> bool {
         self.release_data()
             .map(|rd| rd.access_tokens.iter().any(|at| at.deref().eq(token)))

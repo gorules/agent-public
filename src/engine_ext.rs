@@ -8,6 +8,7 @@ pub trait EngineExtension {
     fn get_version(&self, path: &str) -> Option<Arc<str>>;
 
     fn can_access(&self, token: &str) -> bool;
+    fn decision_keys(&self) -> Vec<String>;
 }
 
 impl EngineExtension for DecisionEngine {
@@ -31,5 +32,12 @@ impl EngineExtension for DecisionEngine {
             .downcast_arc::<ImmutableLoader>()
             .ok()
             .map_or(false, |loader| loader.can_access(token))
+    }
+
+    fn decision_keys(&self) -> Vec<String> {
+        self.loader()
+            .downcast_arc::<ImmutableLoader>()
+            .ok()
+            .map_or_else(Vec::new, |loader| loader.decision_keys())
     }
 }

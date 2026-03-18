@@ -40,7 +40,7 @@ utoipa-swagger-ui = { version = "9", features = ["axum"] }
 utoipa-swagger-ui-vendored = "0.1"
 walkdir = "2.5"
 mimalloc = { version = "*" }
-zen-engine = { version = "0.54", features = ["arbitrary_precision"] }
+zen-engine = { version = "0.55", features = ["arbitrary_precision"] }
 zip = { version = "8.2", default-features = false, features = [
     "aes-crypto",
     "bzip2",

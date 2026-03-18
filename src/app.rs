@@ -37,6 +37,7 @@ pub async fn create_app(agent: Agent, config: EnvironmentConfig) -> Router<()> {
     let (router, openapi) = OpenApiRouter::with_openapi(openapi())
         .routes(routes!(routes::engine::evaluate))
         .routes(routes!(routes::project_info::project_info))
+        .routes(routes!(routes::decision_points::decision_points))
         .routes(routes!(routes::infra::version))
         .routes(routes!(routes::infra::health))
         .split_for_parts();
