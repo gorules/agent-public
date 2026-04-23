@@ -1,4 +1,31 @@
-# [1.25.0](https://github.com/gorules/agent/compare/v1.24.2...v1.25.0) (2026-03-17)
+# Changelog
+
+## [1.25.3](https://github.com/gorules/agent/compare/v1.25.2...v1.25.3) (2026-04-22)
+
+
+### Bug Fixes
+
+* **GRL-492:** update dependencies ([#61](https://github.com/gorules/agent/issues/61)) ([3bfd47e](https://github.com/gorules/agent/commit/3bfd47e477de7b54f0b24c332bb5a71ddcc66311))
+
+## [1.25.2](https://github.com/gorules/agent/compare/v1.25.1...v1.25.2) (2026-03-19)
+
+
+### Bug Fixes
+
+* **GRL-446:** resolve issue with wf permissions ([#57](https://github.com/gorules/agent/issues/57)) ([8c6e0a9](https://github.com/gorules/agent/commit/8c6e0a9bd176a33f6ef69b5dd8e3540cabf0f0b9))
+* **GRL-446:** resolve issue with workflow call ([#56](https://github.com/gorules/agent/issues/56)) ([256b2c9](https://github.com/gorules/agent/commit/256b2c94649accb6304a00580aeed2a9a54b5ad2))
+* **GRL-446:** use pat for releases ([#59](https://github.com/gorules/agent/issues/59)) ([7497042](https://github.com/gorules/agent/commit/7497042861000613d967da72fde1753f22b234cd))
+
+## [1.25.1](https://github.com/gorules/agent/compare/v1.25.0...v1.25.1) (2026-03-19)
+
+
+### Bug Fixes
+
+* **GRL-446:** migrate from semantic release to release please ([#52](https://github.com/gorules/agent/issues/52)) ([65217cf](https://github.com/gorules/agent/commit/65217cfac02f830695e1486e5ddf9ba0b589c1c4))
+* **GRL-446:** resolve changelog issue ([#55](https://github.com/gorules/agent/issues/55)) ([841864a](https://github.com/gorules/agent/commit/841864a59fb7c1badeb68857da736cb93e6da146))
+* **GRL-446:** update release please config ([#54](https://github.com/gorules/agent/issues/54)) ([6577d39](https://github.com/gorules/agent/commit/6577d396c3f4fb0423945f28d50045988915f6e1))
+
+## [1.25.0](https://github.com/gorules/agent/compare/v1.24.2...v1.25.0) (2026-03-17)
 
 
 ### Features
