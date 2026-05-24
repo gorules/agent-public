@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.25.4](https://github.com/gorules/agent/compare/v1.25.3...v1.25.4) (2026-05-22)
+
+
+### Bug Fixes
+
+* **GRL-511:** update dependancies ([ab74f1f](https://github.com/gorules/agent/commit/ab74f1f8a980d17edc3a04293a011181cd9ffac3))
+
 ## [1.25.3](https://github.com/gorules/agent/compare/v1.25.2...v1.25.3) (2026-04-22)
 
 

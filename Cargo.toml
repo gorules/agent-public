@@ -1,6 +1,6 @@
 [package]
 name = "agent"
-version = "1.25.3"
+version = "1.25.4"
 authors = ["GoRules <hi@gorules.io>"]
 edition = "2024"
 
@@ -10,7 +10,12 @@ axum-macros = "0.5"
 axum-server = { version = "0.8", features = ["tls-rustls"] }
 anyhow = "1"
 aws-config = "1.5"
-aws-sdk-s3 = "1.41"
+aws-sdk-s3 = { version = "1.41", default-features = false, features = [
+    "sigv4a",
+    "http-1x",
+    "default-https-client",
+    "rt-tokio"
+] }
 azure_core = { version = "0.21", default-features = false }
 azure_storage = { version = "0.21", default-features = false, features = ["hmac_rust", "enable_reqwest_rustls"] }
 azure_storage_blobs = { version = "0.21", default-features = false, features = ["hmac_rust", "enable_reqwest_rustls"] }
