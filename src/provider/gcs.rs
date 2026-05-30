@@ -15,10 +15,10 @@ use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
 use dashmap::DashMap;
 use futures::StreamExt;
-use google_cloud_storage::client::google_cloud_auth::credentials::CredentialsFile;
-use google_cloud_storage::client::{Client, ClientConfig};
-use google_cloud_storage::http::objects::get::GetObjectRequest;
-use google_cloud_storage::http::objects::list::ListObjectsRequest;
+use gcloud_storage::client::google_cloud_auth::credentials::CredentialsFile;
+use gcloud_storage::client::{Client, ClientConfig};
+use gcloud_storage::http::objects::get::GetObjectRequest;
+use gcloud_storage::http::objects::list::ListObjectsRequest;
 use zip::ZipArchive;
 
 #[derive(Clone)]

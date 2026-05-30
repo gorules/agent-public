@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.25.5](https://github.com/gorules/agent/compare/v1.25.4...v1.25.5) (2026-05-29)
+
+
+### Bug Fixes
+
+* **GRL-517:** replace google-cloud-storage with gcloud-storage 1.3 ([#65](https://github.com/gorules/agent/issues/65)) ([a3446b1](https://github.com/gorules/agent/commit/a3446b174f1eea62f522c20fcda4aa623c99fa7e))
+
 ## [1.25.4](https://github.com/gorules/agent/compare/v1.25.3...v1.25.4) (2026-05-22)
 
 
