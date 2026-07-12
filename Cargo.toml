@@ -1,6 +1,6 @@
 [package]
 name = "agent"
-version = "1.25.5"
+version = "1.25.6"
 authors = ["GoRules <hi@gorules.io>"]
 edition = "2024"
 
@@ -19,7 +19,7 @@ aws-sdk-s3 = { version = "1.41", default-features = false, features = [
 azure_core = { version = "0.21", default-features = false }
 azure_storage = { version = "0.21", default-features = false, features = ["hmac_rust", "enable_reqwest_rustls"] }
 azure_storage_blobs = { version = "0.21", default-features = false, features = ["hmac_rust", "enable_reqwest_rustls"] }
-azure_identity = "0.21"
+azure_identity = { version = "0.21", default-features = false, features = ["development", "old_azure_cli", "enable_reqwest_rustls"] }
 base64 = "0.22"
 config = "0.15"
 chrono = "0.4"
@@ -55,13 +55,13 @@ zip = { version = "8.2", default-features = false, features = [
     "zstd",
 ] }
 
-opentelemetry = { version = "0.31" }
-opentelemetry-otlp = { version = "0.31", features = ["grpc-tonic", "reqwest-client"] }
-opentelemetry_sdk = { version = "0.31", features = ["rt-tokio"] }
-opentelemetry-appender-tracing = { version = "0.31" }
-opentelemetry-semantic-conventions = "0.31"
-axum-tracing-opentelemetry = { version = "0.33", features = ["tracing_level_info"] }
-tracing-opentelemetry = { version = "0.32", features = ["metrics"] }
+opentelemetry = { version = "0.32" }
+opentelemetry-otlp = { version = "0.32", features = ["grpc-tonic"] }
+opentelemetry_sdk = { version = "0.32", features = ["rt-tokio"] }
+opentelemetry-appender-tracing = { version = "0.32" }
+opentelemetry-semantic-conventions = "0.32"
+axum-tracing-opentelemetry = { version = "0.38", features = ["tracing_level_info"] }
+tracing-opentelemetry = { version = "0.33", features = ["metrics"] }
 
 [dev-dependencies]
 testcontainers = "0.27"

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.25.6](https://github.com/gorules/agent/compare/v1.25.5...v1.25.6) (2026-07-07)
+
+
+### Bug Fixes
+
+* **GRL-536:** base image pull in docker build to patch openssl cve  ([93be4df](https://github.com/gorules/agent/commit/93be4df301be085ed2a83f5d8c2659c8c1c784b3))
+
 ## [1.25.5](https://github.com/gorules/agent/compare/v1.25.4...v1.25.5) (2026-05-29)
 
 
