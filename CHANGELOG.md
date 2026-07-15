@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.26.0](https://github.com/gorules/agent/compare/v1.25.6...v1.26.0) (2026-07-15)
+
+
+### Features
+
+* **GRL-547:** add IAM auth for Azure storage via PROVIDER__ACCOUNT_NAME ([#70](https://github.com/gorules/agent/issues/70)) ([d1b1bf1](https://github.com/gorules/agent/commit/d1b1bf192b4dfc03f5c1b0a9575079c5c9b7570f))
+
 ## [1.25.6](https://github.com/gorules/agent/compare/v1.25.5...v1.25.6) (2026-07-07)
 
 

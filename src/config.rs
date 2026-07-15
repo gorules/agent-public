@@ -116,7 +116,8 @@ pub struct S3ProviderConfig {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct AzureStorageProviderConfig {
-    pub connection_string: String,
+    pub connection_string: Option<String>,
+    pub account_name: Option<String>,
     pub container: String,
     pub prefix: Option<String>,
 }
