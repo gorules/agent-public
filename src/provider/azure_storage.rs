@@ -17,7 +17,7 @@ use futures::StreamExt;
 use std::future::Future;
 use std::io::Cursor;
 use std::num::NonZeroU32;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use zip::ZipArchive;
 
 #[derive(Clone, Debug)]
@@ -293,6 +293,7 @@ impl AzureStorageProvider {
                         Arc::new(Project {
                             engine,
                             content_hash,
+                            rules_spec: OnceLock::new(),
                         }),
                     ))
                 }

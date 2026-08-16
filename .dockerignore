@@ -1,5 +1,6 @@
 .git
 target
+.tsgo-cache
 node_modules
 frontend/node_modules
 

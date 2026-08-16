@@ -32,17 +32,17 @@ pub async fn project_info(
     };
 
     Ok(Json(ProjectInfo {
-        project_id: release_data.project.id.clone(),
-        project_key: release_data.project.key.clone(),
-        release_id: release_data.release.id.clone(),
-        release_version: release_data.release.version.clone(),
+        project_id: release_data.project_id().cloned(),
+        project_key: release_data.project_key().cloned(),
+        release_id: release_data.release_id().cloned(),
+        release_version: release_data.release_version().cloned(),
     }))
 }
 
 #[derive(Serialize, utoipa::ToSchema)]
 pub struct ProjectInfo {
-    pub project_id: Arc<str>,
-    pub project_key: Arc<str>,
-    pub release_id: Arc<str>,
-    pub release_version: Arc<str>,
+    pub project_id: Option<Arc<str>>,
+    pub project_key: Option<Arc<str>>,
+    pub release_id: Option<Arc<str>>,
+    pub release_version: Option<Arc<str>>,
 }

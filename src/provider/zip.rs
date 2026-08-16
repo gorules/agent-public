@@ -2,7 +2,7 @@ use std::env;
 use std::fs::File;
 use std::future::Future;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use crate::config::{GlobalAgentConfig, ZipProviderConfig};
 use crate::immutable_loader::{ImmutableLoader, ProtectedZipArchive};
@@ -141,6 +141,7 @@ fn load_from_directory(root: PathBuf, password: Option<Arc<str>>) -> DashMap<Str
                         }
                     },
                     content_hash: None,
+                    rules_spec: OnceLock::new(),
                 }),
             ))
         })

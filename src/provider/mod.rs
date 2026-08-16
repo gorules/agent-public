@@ -18,6 +18,7 @@ use crate::provider::filesystem::FilesystemProvider;
 use crate::provider::gcs::GcsProvider;
 use crate::provider::s3::S3Provider;
 use crate::provider::zip::ZipProvider;
+use serde_json::Value;
 
 mod azure_storage;
 mod filesystem;
@@ -157,11 +158,10 @@ impl Agent {
         };
 
         self.data.projects.iter().find_map(|p| {
-            let Some(rd) = p.engine.release_data() else {
-                return None;
-            };
-
-            (rd.project.id.deref() == project).then_some(p.to_owned())
+            let rd = p.engine.release_data()?;
+            rd.project_id()
+                .is_some_and(|id| id.deref() == project)
+                .then_some(p.to_owned())
         })
     }
 
@@ -235,6 +235,9 @@ type AgentDecisionEngine = DecisionEngine;
 pub struct Project {
     pub engine: AgentDecisionEngine,
     pub content_hash: Option<Vec<u8>>,
+    /// OpenAPI document for the /rules surface, built lazily on first GET.
+    /// The whole Project is replaced on refresh, so this can never go stale.
+    pub rules_spec: OnceLock<Arc<Value>>,
 }
 
 #[derive(Debug, Default)]

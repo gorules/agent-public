@@ -1,6 +1,6 @@
 use std::future::Future;
 use std::io::Cursor;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use crate::Agent;
 use crate::config::{GlobalAgentConfig, S3ProviderConfig};
@@ -116,6 +116,7 @@ impl S3Provider {
                         Arc::new(Project {
                             engine,
                             content_hash: object.e_tag.map(|t| t.into_bytes()),
+                            rules_spec: OnceLock::new(),
                         }),
                     ))
                 }

@@ -32,10 +32,14 @@ pub async fn create_agent(
 }
 
 pub async fn create_app(agent: Agent, config: EnvironmentConfig) -> Router<()> {
+    crate::tsgo::init(&config.tsgo);
+
     let local_pool = LocalPoolHandle::new(available_parallelism().map(Into::into).unwrap_or(1));
 
     let (router, openapi) = OpenApiRouter::with_openapi(openapi())
         .routes(routes!(routes::engine::evaluate))
+        .routes(routes!(routes::rules::rules_evaluate))
+        .routes(routes!(routes::rules::rules_openapi))
         .routes(routes!(routes::project_info::project_info))
         .routes(routes!(routes::decision_points::decision_points))
         .routes(routes!(routes::infra::version))

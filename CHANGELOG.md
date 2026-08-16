@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.28.0](https://github.com/gorules/agent/compare/v1.27.1...v1.28.0) (2026-08-16)
+
+
+### Features
+
+* **GRL-644:** add tsgo ([#77](https://github.com/gorules/agent/issues/77)) ([23a0141](https://github.com/gorules/agent/commit/23a0141b29b8c2a189035ad623970ac81070b95b))
+
+## [1.27.1](https://github.com/gorules/agent/compare/v1.27.0...v1.27.1) (2026-08-06)
+
+
+### Bug Fixes
+
+* **GRL-614:** rules api meta sync ([#75](https://github.com/gorules/agent/issues/75)) ([70990a7](https://github.com/gorules/agent/commit/70990a70e1cda70ae62b342c3da0a6843a266611))
+
+## [1.27.0](https://github.com/gorules/agent/compare/v1.26.0...v1.27.0) (2026-08-05)
+
+
+### Features
+
+* **GRL-601:** add /api/rules evaluate and openapi discovery endpoints ([#73](https://github.com/gorules/agent/issues/73)) ([e152262](https://github.com/gorules/agent/commit/e15226229b024d12825c2fa02cbfa25359d5b1c7))
+
+
+### Bug Fixes
+
+* **GRL-593:** update zen-engine to 1.0.0-beta.11 ([f6b1bb1](https://github.com/gorules/agent/commit/f6b1bb1a1d3c1a3f3b6524d69b5013b1a735690a))
+
 ## [1.26.0](https://github.com/gorules/agent/compare/v1.25.6...v1.26.0) (2026-07-15)
 
 

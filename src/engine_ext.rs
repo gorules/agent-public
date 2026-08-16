@@ -1,7 +1,9 @@
 use crate::data::release_data::ReleaseData;
 use crate::immutable_loader::ImmutableLoader;
+use crate::rules_spec::SpecEntry;
 use std::sync::Arc;
 use zen_engine::DecisionEngine;
+use zen_engine::model::DecisionContent;
 
 pub trait EngineExtension {
     fn release_data(&self) -> Option<ReleaseData>;
@@ -9,6 +11,8 @@ pub trait EngineExtension {
 
     fn can_access(&self, token: &str) -> bool;
     fn decision_keys(&self) -> Vec<String>;
+    fn spec_entries(&self) -> Vec<SpecEntry>;
+    fn documents(&self) -> Vec<(Arc<str>, Arc<DecisionContent>)>;
 }
 
 impl EngineExtension for DecisionEngine {
@@ -39,5 +43,19 @@ impl EngineExtension for DecisionEngine {
             .downcast_arc::<ImmutableLoader>()
             .ok()
             .map_or_else(Vec::new, |loader| loader.decision_keys())
+    }
+
+    fn spec_entries(&self) -> Vec<SpecEntry> {
+        self.loader()
+            .downcast_arc::<ImmutableLoader>()
+            .ok()
+            .map_or_else(Vec::new, |loader| loader.spec_entries())
+    }
+
+    fn documents(&self) -> Vec<(Arc<str>, Arc<DecisionContent>)> {
+        self.loader()
+            .downcast_arc::<ImmutableLoader>()
+            .ok()
+            .map_or_else(Vec::new, |loader| loader.documents())
     }
 }

@@ -65,10 +65,18 @@ pub async fn evaluate(
     };
 
     if let Some(release_data) = project_data.engine.release_data() {
-        span.set_attribute("release.id", release_data.release.id.clone());
-        span.set_attribute("release.version", release_data.release.version.clone());
-        span.set_attribute("project.id", release_data.project.id.clone());
-        span.set_attribute("project.key", release_data.project.key.clone());
+        if let Some(id) = release_data.release_id() {
+            span.set_attribute("release.id", id.clone());
+        }
+        if let Some(version) = release_data.release_version() {
+            span.set_attribute("release.version", version.clone());
+        }
+        if let Some(id) = release_data.project_id() {
+            span.set_attribute("project.id", id.clone());
+        }
+        if let Some(key) = release_data.project_key() {
+            span.set_attribute("project.key", key.clone());
+        }
     };
 
     let access_token = headers
@@ -122,7 +130,7 @@ pub async fn evaluate(
 
     let release_data = project_data.engine.release_data();
 
-    let release_id = release_data.map(|r| r.release.id.clone());
+    let release_id = release_data.and_then(|r| r.release_id().cloned());
     let version_id = project_data.engine.get_version(&key);
 
     Ok(Json(EvaluateResponse {

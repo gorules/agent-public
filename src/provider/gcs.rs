@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use std::future::Future;
 use std::io::Cursor;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use crate::Agent;
 use crate::config::{GcsProviderConfig, GlobalAgentConfig};
@@ -144,6 +144,7 @@ impl GcsProvider {
                         Arc::new(Project {
                             engine,
                             content_hash: Some(object.etag.into_bytes()),
+                            rules_spec: OnceLock::new(),
                         }),
                     ))
                 }
