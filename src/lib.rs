@@ -14,3 +14,4 @@ mod util;
 
 pub use provider::Agent;
 pub use provider::Project;
+pub use provider::azure_storage::AzureSharedKeyPolicy;

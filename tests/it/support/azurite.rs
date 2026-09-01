@@ -1,10 +1,17 @@
 use crate::support::path::data_path_files;
-use azure_storage::{CloudLocation, ConnectionString};
-use azure_storage_blobs::prelude::BlobServiceClient;
+use agent::AzureSharedKeyPolicy;
+use azure_core::http::policies::Policy;
+use azure_core::http::{ClientOptions, RequestContent, Url};
+use azure_storage_blob::{BlobContainerClient, BlobContainerClientOptions};
 use std::borrow::Cow;
+use std::sync::Arc;
 use testcontainers::core::WaitFor;
 use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, Image};
+
+const ACCOUNT_NAME: &str = "devstoreaccount1";
+const ACCOUNT_KEY: &str =
+    "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 
 pub struct AzuriteContainer {
     pub container: ContainerAsync<AzuriteImage>,
@@ -21,15 +28,14 @@ impl AzuriteContainer {
         let cs = container.image().connection_string(host_port);
         let cn = "sample-container".to_string();
 
-        let client = container.image().blob_client(host_port).await;
-        let blob_container_client = client.container_client(cn.as_str());
+        let blob_container_client = container.image().container_client(host_port, cn.as_str())?;
 
-        blob_container_client.create().await?;
+        blob_container_client.create(None).await?;
 
         for dp in data_path_files() {
             blob_container_client
                 .blob_client(dp.relative_path.strip_suffix(".zip").unwrap())
-                .put_block_blob(dp.read())
+                .upload(RequestContent::from(dp.read()), None)
                 .await?;
         }
 
@@ -47,32 +53,30 @@ pub struct AzuriteImage;
 impl AzuriteImage {
     pub fn connection_string(&self, port: u16) -> String {
         format!(
-            "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:{port}/devstoreaccount1;"
+            "DefaultEndpointsProtocol=http;AccountName={ACCOUNT_NAME};AccountKey={ACCOUNT_KEY};BlobEndpoint=http://127.0.0.1:{port}/{ACCOUNT_NAME};"
         )
     }
 
-    async fn blob_client(&self, port: u16) -> BlobServiceClient {
-        let cs = self.connection_string(port);
-        let connection_string = ConnectionString::new(cs.as_str()).unwrap();
+    fn container_client(
+        &self,
+        port: u16,
+        container_name: &str,
+    ) -> Result<BlobContainerClient, Box<dyn std::error::Error + 'static>> {
+        let url = Url::parse(&format!(
+            "http://127.0.0.1:{port}/{ACCOUNT_NAME}/{container_name}"
+        ))?;
+        let options = BlobContainerClientOptions {
+            client_options: ClientOptions {
+                per_try_policies: vec![Arc::new(AzureSharedKeyPolicy::new(
+                    ACCOUNT_NAME,
+                    ACCOUNT_KEY,
+                )) as Arc<dyn Policy>],
+                ..Default::default()
+            },
+            ..Default::default()
+        };
 
-        let client_builder = BlobServiceClient::builder(
-            connection_string.account_name.expect("Valid account name"),
-            connection_string
-                .storage_credentials()
-                .expect("Valid storage credentials"),
-        )
-        .cloud_location(CloudLocation::Custom {
-            account: connection_string
-                .account_name
-                .expect("Valid account name")
-                .to_string(),
-            uri: connection_string
-                .blob_endpoint
-                .expect("Valid blob endpoint")
-                .to_string(),
-        });
-
-        client_builder.blob_service_client()
+        Ok(BlobContainerClient::new(url, None, Some(options))?)
     }
 }
 
@@ -92,6 +96,6 @@ impl Image for AzuriteImage {
     }
 
     fn cmd(&self) -> impl IntoIterator<Item = impl Into<Cow<'_, str>>> {
-        vec!["azurite", "--blobHost", "0.0.0.0"]
+        vec!["azurite", "--blobHost", "0.0.0.0", "--skipApiVersionCheck"]
     }
 }

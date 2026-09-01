@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.28.1](https://github.com/gorules/agent/compare/v1.28.0...v1.28.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* **GRL-646:** update dependencies and fix cargo audit ([#79](https://github.com/gorules/agent/issues/79)) ([9f72c38](https://github.com/gorules/agent/commit/9f72c385b558f40f41ff0a408cd68510622a06e6))
+
 ## [1.28.0](https://github.com/gorules/agent/compare/v1.27.1...v1.28.0) (2026-08-16)
 
 

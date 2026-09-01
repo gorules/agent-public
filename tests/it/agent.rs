@@ -1,10 +1,12 @@
+use crate::support::azurite::AzuriteContainer;
 use crate::support::minio::MinioContainer;
 use crate::support::path::ValidateProject;
 use agent::app;
-use agent::config::{EnvironmentConfig, ProviderConfig, S3ProviderConfig, ZipProviderConfig};
+use agent::config::{
+    AzureStorageProviderConfig, EnvironmentConfig, ProviderConfig, S3ProviderConfig,
+    ZipProviderConfig,
+};
 use std::env;
-
-mod support;
 
 #[tokio::test]
 async fn zip_agent() {
@@ -114,4 +116,42 @@ async fn s3_agent_prefix() {
         .project("nested-project")
         .expect("nested-project was not found");
     nested_project.validate_project().await;
+}
+
+#[tokio::test]
+async fn azure_agent() {
+    let azurite = AzuriteContainer::start()
+        .await
+        .expect("Azurite container is available");
+
+    let config = EnvironmentConfig {
+        provider: ProviderConfig::AzureStorage(AzureStorageProviderConfig {
+            connection_string: Some(azurite.connection_string.clone()),
+            account_name: None,
+            container: azurite.container_name.clone(),
+            prefix: None,
+        }),
+        ..Default::default()
+    };
+
+    let agent = app::create_agent(config, Default::default()).await;
+
+    assert!(
+        agent.project("sample-project").is_some(),
+        "sample-project was not found"
+    );
+    assert!(
+        agent.project("SampleProject").is_some(),
+        "SampleProject was not found"
+    );
+
+    assert!(
+        agent.project("nested/nested-project").is_none(),
+        "nested-project was found"
+    );
+
+    let sample_project = agent
+        .project("sample-project")
+        .expect("sample-project was not found");
+    sample_project.validate_project().await;
 }

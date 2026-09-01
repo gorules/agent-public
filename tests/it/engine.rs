@@ -9,8 +9,6 @@ use serde_json::json;
 use std::env;
 use tower::ServiceExt;
 
-mod support;
-
 #[tokio::test]
 async fn s3_engine() {
     let minio = MinioContainer::start()

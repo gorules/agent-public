@@ -1,5 +1,3 @@
-mod support;
-
 use agent::app;
 use agent::config::{EnvironmentConfig, ProviderConfig, ZipProviderConfig};
 use axum::body::Body;

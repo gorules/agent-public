@@ -20,7 +20,7 @@ use crate::provider::s3::S3Provider;
 use crate::provider::zip::ZipProvider;
 use serde_json::Value;
 
-mod azure_storage;
+pub mod azure_storage;
 mod filesystem;
 mod gcs;
 mod s3;
