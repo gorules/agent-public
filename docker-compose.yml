@@ -1,16 +1,15 @@
 services:
-  minio:
-    image: minio/minio
+  rustfs:
+    image: rustfs/rustfs:1.0.0
     ports:
       - '9000:9000'
       - '9001:9001'
     volumes:
-      - './.temp/minio:/data'
-    command: server /data --console-address ":9001"
+      - './.temp/rustfs:/data'
     environment:
-      - MINIO_ROOT_USER=minio_username
-      - MINIO_ROOT_PASSWORD=minio_password
-      - MINIO_DEFAULT_BUCKETS=bucket
+      - RUSTFS_ACCESS_KEY=rustfs_username
+      - RUSTFS_SECRET_KEY=rustfs_password
+      - RUSTFS_CONSOLE_ENABLE=true
 
   azure-blob:
     image: mcr.microsoft.com/azure-storage/azurite:latest

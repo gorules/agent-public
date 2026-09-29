@@ -46,7 +46,7 @@ You can build your own image bundled with rules by doing docker build from our i
 PROVIDER__TYPE=Zip
 ```
 
-### MinIO
+### S3-compatible (RustFS, MinIO, ...)
 ```bash
 PROVIDER__TYPE=S3
 PROVIDER__REGION=us-east-1

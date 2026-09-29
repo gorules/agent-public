@@ -6,25 +6,36 @@ use aws_sdk_s3::config::Credentials;
 use aws_sdk_s3::primitives::ByteStream;
 use std::borrow::Cow;
 use std::collections::HashMap;
-use testcontainers::core::WaitFor;
+use std::time::Duration;
+use testcontainers::core::{ContainerPort, WaitFor};
 use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, Image};
 
-pub struct MinioContainer {
-    pub container: ContainerAsync<MinioImage>,
+pub struct S3Container {
+    pub container: ContainerAsync<S3Image>,
     #[allow(dead_code)]
     pub client: Client,
 }
 
-impl MinioContainer {
+impl S3Container {
     pub async fn start() -> Result<Self, Box<dyn std::error::Error + 'static>> {
-        let container = MinioImage::default().start().await?;
+        let container = S3Image::default().start().await?;
         let host_port = container.get_host_port_ipv4(9000).await?;
         let client = container.image().s3_client(host_port).await;
 
         let bucket = container.image().bucket_name.as_str();
 
-        client.create_bucket().bucket(bucket).send().await?;
+        // RustFS prints nothing once it is listening, so retry the first call
+        // until the API answers.
+        let mut attempts = 0;
+        while let Err(err) = client.create_bucket().bucket(bucket).send().await {
+            attempts += 1;
+            if attempts >= 50 {
+                return Err(err.into());
+            }
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        }
+
         for pf in data_path_files() {
             let buf_data = pf.read();
 
@@ -42,25 +53,25 @@ impl MinioContainer {
 }
 
 #[derive(Debug)]
-pub struct MinioImage {
+pub struct S3Image {
     pub username: String,
     pub password: String,
     pub bucket_name: String,
 }
 
-impl Default for MinioImage {
+impl Default for S3Image {
     fn default() -> Self {
         let bucket_name = "sample-bucket".to_string();
 
         Self {
-            username: "minio-username".to_string(),
-            password: "minio-password".to_string(),
+            username: "s3-username".to_string(),
+            password: "s3-password".to_string(),
             bucket_name,
         }
     }
 }
 
-impl MinioImage {
+impl S3Image {
     pub fn endpoint(&self, host_port: u16) -> String {
         format!("http://127.0.0.1:{host_port}")
     }
@@ -70,7 +81,7 @@ impl MinioImage {
         let region_provider = RegionProviderChain::default_provider().or_else("us-east-1");
         let creds = Credentials::new(&self.username, &self.password, None, None, "test");
 
-        // Default MinIO credentials (Can be overridden by ENV container variables)
+        // Credentials the container is started with, see env_vars
         let shared_config = aws_config::defaults(BehaviorVersion::latest())
             .region(region_provider)
             .endpoint_url(endpoint_uri)
@@ -82,30 +93,30 @@ impl MinioImage {
     }
 }
 
-impl Image for MinioImage {
+impl Image for S3Image {
     fn name(&self) -> &str {
-        "minio/minio"
+        "rustfs/rustfs"
     }
 
     fn tag(&self) -> &str {
-        "RELEASE.2024-09-22T00-33-43Z"
+        "1.0.0"
     }
 
     fn ready_conditions(&self) -> Vec<WaitFor> {
-        vec![WaitFor::message_on_stderr("API:")]
+        vec![WaitFor::message_on_stdout("Starting:")]
     }
 
     fn env_vars(
         &self,
     ) -> impl IntoIterator<Item = (impl Into<Cow<'_, str>>, impl Into<Cow<'_, str>>)> {
         let mut variables = HashMap::new();
-        variables.insert("MINIO_ROOT_USER", &self.username);
-        variables.insert("MINIO_ROOT_PASSWORD", &self.password);
+        variables.insert("RUSTFS_ACCESS_KEY", &self.username);
+        variables.insert("RUSTFS_SECRET_KEY", &self.password);
 
         variables
     }
 
-    fn cmd(&self) -> impl IntoIterator<Item = impl Into<Cow<'_, str>>> {
-        vec!["server", "/data"]
+    fn expose_ports(&self) -> &[ContainerPort] {
+        &[ContainerPort::Tcp(9000)]
     }
 }

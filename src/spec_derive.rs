@@ -149,6 +149,18 @@ mod tests {
         })
     }
 
+    fn passthrough_graph() -> Value {
+        json!({
+            "nodes": [
+                { "id": "in", "name": "request", "type": "inputNode", "content": {} },
+                { "id": "out", "name": "response", "type": "outputNode", "content": {} }
+            ],
+            "edges": [
+                { "id": "e-a", "sourceId": "in", "targetId": "out" }
+            ]
+        })
+    }
+
     fn enrich_one(path: &str, content: Value) -> SpecEntry {
         let mut entries = vec![entry(path)];
         enrich(&mut entries, vec![(Arc::from(path), document(content))]);
@@ -220,11 +232,23 @@ mod tests {
         );
     }
 
+    #[test]
+    fn derives_output_schema_from_expression_keys() {
+        let entry = enrich_one("Pricing Rule", expression_graph());
+        let output = entry
+            .output_schema
+            .as_deref()
+            .expect("output schema derived from expression keys");
+
+        assert_eq!(output["properties"]["total"], json!({ "type": "number" }));
+        assert_eq!(output["required"], json!(["total"]));
+    }
+
     /// An output the engine cannot pin down must stay absent rather than
     /// become an object that forbids every key.
     #[test]
     fn uninformative_types_leave_the_schema_unset() {
-        let entry = enrich_one("Pricing Rule", expression_graph());
+        let entry = enrich_one("Passthrough", passthrough_graph());
 
         assert_eq!(entry.output_schema, None);
     }

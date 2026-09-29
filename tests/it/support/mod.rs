@@ -1,3 +1,3 @@
 pub mod azurite;
-pub mod minio;
 pub mod path;
+pub mod s3;

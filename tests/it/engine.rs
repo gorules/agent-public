@@ -1,5 +1,5 @@
-use crate::support::minio::MinioContainer;
 use crate::support::path::decision_paths;
+use crate::support::s3::S3Container;
 use agent::app;
 use agent::config::{EnvironmentConfig, ProviderConfig, S3ProviderConfig};
 use axum::body::{Body, to_bytes};
@@ -11,23 +11,23 @@ use tower::ServiceExt;
 
 #[tokio::test]
 async fn s3_engine() {
-    let minio = MinioContainer::start()
+    let s3 = S3Container::start()
         .await
-        .expect("Minio container is available");
-    let host_port = minio
+        .expect("S3 container is available");
+    let host_port = s3
         .container
         .get_host_port_ipv4(9000)
         .await
-        .expect("Minio port 9000 is available");
-    let minio_image = minio.container.image();
+        .expect("S3 port 9000 is available");
+    let s3_image = s3.container.image();
 
-    unsafe { env::set_var("AWS_ACCESS_KEY_ID", minio_image.username.clone()) };
-    unsafe { env::set_var("AWS_SECRET_ACCESS_KEY", minio_image.password.clone()) };
+    unsafe { env::set_var("AWS_ACCESS_KEY_ID", s3_image.username.clone()) };
+    unsafe { env::set_var("AWS_SECRET_ACCESS_KEY", s3_image.password.clone()) };
 
     let config = EnvironmentConfig {
         provider: ProviderConfig::S3(S3ProviderConfig {
-            bucket: minio_image.bucket_name.to_string(),
-            endpoint: Some(minio_image.endpoint(host_port)),
+            bucket: s3_image.bucket_name.to_string(),
+            endpoint: Some(s3_image.endpoint(host_port)),
             prefix: None,
             force_path_style: true,
         }),
@@ -39,23 +39,23 @@ async fn s3_engine() {
 
 #[tokio::test]
 async fn s3_engine_prefix() {
-    let minio = MinioContainer::start()
+    let s3 = S3Container::start()
         .await
-        .expect("Minio container is available");
-    let host_port = minio
+        .expect("S3 container is available");
+    let host_port = s3
         .container
         .get_host_port_ipv4(9000)
         .await
-        .expect("Minio port 9000 is available");
-    let minio_image = minio.container.image();
+        .expect("S3 port 9000 is available");
+    let s3_image = s3.container.image();
 
-    unsafe { env::set_var("AWS_ACCESS_KEY_ID", minio_image.username.clone()) };
-    unsafe { env::set_var("AWS_SECRET_ACCESS_KEY", minio_image.password.clone()) };
+    unsafe { env::set_var("AWS_ACCESS_KEY_ID", s3_image.username.clone()) };
+    unsafe { env::set_var("AWS_SECRET_ACCESS_KEY", s3_image.password.clone()) };
 
     let config = EnvironmentConfig {
         provider: ProviderConfig::S3(S3ProviderConfig {
-            bucket: minio_image.bucket_name.to_string(),
-            endpoint: Some(minio_image.endpoint(host_port)),
+            bucket: s3_image.bucket_name.to_string(),
+            endpoint: Some(s3_image.endpoint(host_port)),
             prefix: Some("nested".to_string()),
             force_path_style: true,
         }),

@@ -1,5 +1,30 @@
 # Changelog
 
+## [2.0.0](https://github.com/gorules/agent/compare/v1.28.2...v2.0.0) (2026-09-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* **GRL-694:** upgrade zen engine to 2.1.0 ([#86](https://github.com/gorules/agent/issues/86))
+
+### Features
+
+* **GRL-694:** upgrade zen engine to 2.1.0 ([#86](https://github.com/gorules/agent/issues/86)) ([1ae5b8b](https://github.com/gorules/agent/commit/1ae5b8b6b35f7815c1917730dd69e1a5172b8d1e))
+
+
+### Bug Fixes
+
+* **GRL-691:** cleanup cicd ([#84](https://github.com/gorules/agent/issues/84)) ([c470781](https://github.com/gorules/agent/commit/c47078146bcdf44fae79f3c82108a5ff10211b29))
+
+## [1.28.2](https://github.com/gorules/agent/compare/v1.28.1...v1.28.2) (2026-09-28)
+
+
+### Bug Fixes
+
+* **GRL-689:** add copilot vulnerability fix workflow ([b15c2cd](https://github.com/gorules/agent/commit/b15c2cdd9bf1f9b4667a2de70a380973f945457c))
+* **GRL-689:** point copilot instructions at rustfs ([4529ef5](https://github.com/gorules/agent/commit/4529ef579f7ff6935d5adea60609afde3828d5de))
+* **GRL-690:** replace minio with rustfs in tests ([f6a2bfc](https://github.com/gorules/agent/commit/f6a2bfc30ef717583f8fc48e51dda7485cf339a1))
+
 ## [1.28.1](https://github.com/gorules/agent/compare/v1.28.0...v1.28.1) (2026-08-24)
 
 

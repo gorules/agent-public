@@ -1,6 +1,6 @@
 [package]
 name = "agent"
-version = "1.28.1"
+version = "2.0.0"
 authors = ["GoRules <hi@gorules.io>"]
 edition = "2024"
 
@@ -46,8 +46,8 @@ utoipa-swagger-ui-vendored = "0.1"
 walkdir = "2.5"
 tsgo-wasm = "0.3"
 mimalloc = { version = "*" }
-zen-engine = { version = "1.0.0-beta.12", features = ["arbitrary_precision"] }
-zen-expression = { version = "1.0.0-beta.12", features = ["arbitrary_precision"] }
+zen-engine = { version = "2.1.0", features = ["arbitrary_precision"] }
+zen-expression = { version = "2.1.0", features = ["arbitrary_precision"] }
 zip = { version = "8.6", default-features = false, features = [
     "aes-crypto",
     "bzip2",
