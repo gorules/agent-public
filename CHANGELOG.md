@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/gorules/agent/compare/v2.0.0...v2.0.1) (2026-10-02)
+
+
+### Bug Fixes
+
+* **GRL-704:** upgrade zen engine to 2.1.2 ([#87](https://github.com/gorules/agent/issues/87)) ([5dba461](https://github.com/gorules/agent/commit/5dba461e7cede4bace459d5461bce76ac4fa0c14))
+
 ## [2.0.0](https://github.com/gorules/agent/compare/v1.28.2...v2.0.0) (2026-09-29)
 
 

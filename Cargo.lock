@@ -41,7 +41,7 @@ dependencies = [
 
 [[package]]
 name = "agent"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -8271,9 +8271,9 @@ dependencies = [
 
 [[package]]
 name = "zen-engine"
-version = "2.1.0"
+version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d75d0139fdf05917b74b8ccf21303f9ffaf3547b4aeb491fa42c491900a97e08"
+checksum = "aee7f2b0d1d9ecbcbb6a5e97b720597e23b391052f01fbcd9bad70dbae84336e"
 dependencies = [
  "ahash 0.8.12",
  "anyhow",
@@ -8314,9 +8314,9 @@ dependencies = [
 
 [[package]]
 name = "zen-expression"
-version = "2.1.0"
+version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "086fb7ed5561bfd94cc25cddb3dd6e1c37299a532a66f361b759f9594dd7a2a3"
+checksum = "5f744c9d463bc8f8666bc9948d3776e0308ad1c3691607b62051684471b85b8f"
 dependencies = [
  "ahash 0.8.12",
  "anyhow",
@@ -8345,9 +8345,9 @@ dependencies = [
 
 [[package]]
 name = "zen-macros"
-version = "2.1.0"
+version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df437850556552e70d7a22652d047d2b868770e528a47bd603fc73355f52ec55"
+checksum = "21d180d2c43d0fc0b5ed75463615ebd6b842c1282505f158096f8e5b17f66489"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -8357,9 +8357,9 @@ dependencies = [
 
 [[package]]
 name = "zen-tmpl"
-version = "2.1.0"
+version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01e485f59e9422a04f368e97be6e18daead6ed9ad093c02d690d1a172e4aaeb2"
+checksum = "3ae6d0c522420b75fefb15edd58f7096c01a5bc568538ecd72db48a1b74f8670"
 dependencies = [
  "serde",
  "serde_json",
@@ -8369,9 +8369,9 @@ dependencies = [
 
 [[package]]
 name = "zen-types"
-version = "2.1.0"
+version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4223dc540230672fe0a1da0eb6e7f5c084aba9389a5451ca380ffb6657e80bb1"
+checksum = "22a273ad92f5ee4b5c0da22412074d1676bfae61886f87deec15c79e9766d601"
 dependencies = [
  "ahash 0.8.12",
  "hipstr",
