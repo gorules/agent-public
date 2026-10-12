@@ -12,7 +12,7 @@ use azure_core::http::policies::{Policy, PolicyResult};
 use azure_core::http::{ClientOptions, Etag, Request, Url};
 use azure_identity::{
     ClientSecretCredential, DeveloperToolsCredential, ManagedIdentityCredential,
-    WorkloadIdentityCredential,
+    ManagedIdentityCredentialOptions, UserAssignedId, WorkloadIdentityCredential,
 };
 use azure_storage_blob::models::BlobContainerClientListBlobsOptions;
 use azure_storage_blob::{BlobContainerClient, BlobContainerClientOptions};
@@ -276,7 +276,14 @@ fn default_credential_chain() -> anyhow::Result<Arc<dyn TokenCredential>> {
     if let Ok(credential) = WorkloadIdentityCredential::new(None) {
         sources.push(credential);
     }
-    if let Ok(credential) = ManagedIdentityCredential::new(None) {
+    let managed_identity_options = ManagedIdentityCredentialOptions {
+        user_assigned_id: std::env::var("AZURE_CLIENT_ID")
+            .ok()
+            .filter(|id| !id.trim().is_empty())
+            .map(UserAssignedId::ClientId),
+        ..Default::default()
+    };
+    if let Ok(credential) = ManagedIdentityCredential::new(Some(managed_identity_options)) {
         sources.push(credential);
     }
     if let Ok(credential) = DeveloperToolsCredential::new(None) {

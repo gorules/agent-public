@@ -26,6 +26,15 @@ PROVIDER__CONNECTION_STRING=<connection-string>
 PROVIDER__CONTAINER=<container-name>
 ```
 
+With managed identity (Entra ID), use the account name instead of a connection string:
+
+```bash
+PROVIDER__TYPE=AzureStorage
+PROVIDER__ACCOUNT_NAME=<storage-account-name>
+PROVIDER__CONTAINER=<container-name>
+AZURE_CLIENT_ID=<client-id> # Optional, selects a user-assigned identity
+```
+
 ### Google Cloud
 
 ```bash

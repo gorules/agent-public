@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.2](https://github.com/gorules/agent/compare/v2.0.1...v2.0.2) (2026-10-09)
+
+
+### Bug Fixes
+
+* **GRL-724:** use azure_client_id for azure storage managed identity ([#89](https://github.com/gorules/agent/issues/89)) ([6776ea3](https://github.com/gorules/agent/commit/6776ea33ba51f8b5e11270bf50f51068022916e1))
+
 ## [2.0.1](https://github.com/gorules/agent/compare/v2.0.0...v2.0.1) (2026-10-02)
 
 
