@@ -408,3 +408,50 @@ async fn list_without_release_metadata_uses_fallbacks() {
     assert!(schema["properties"].get("meta").is_none());
     assert_eq!(schema["properties"]["trace"]["type"], json!("object"));
 }
+
+/// CI/CD delivery ships a v2 `.config/project.json` without `accessTokens`.
+/// Its release metadata still applies, and no route asks for a token.
+#[tokio::test]
+async fn v2_release_without_access_tokens_is_open() {
+    let router = rules_router().await;
+    let (status, headers, body) = send(
+        &router,
+        evaluate_request(
+            "/api/rules/ci-cd-project/evaluate/plain-rule",
+            None,
+            json!({ "context": { "hello": "world" } }),
+        ),
+    )
+    .await;
+
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["result"]["hello"], json!("world"));
+    assert_eq!(
+        body["meta"]["type"],
+        json!("environment"),
+        "manifest was read, not skipped"
+    );
+    assert_eq!(
+        headers.get("X-Release-Id").map(|v| v.to_str().unwrap()),
+        Some("88888888-8888-8888-8888-888888888888")
+    );
+
+    let (status, _, _) = send(
+        &router,
+        evaluate_request(
+            "/api/projects/ci-cd-project/evaluate/plain-rule",
+            None,
+            json!({ "context": {} }),
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "legacy evaluate");
+
+    for uri in [
+        "/api/rules/ci-cd-project",
+        "/api/projects/ci-cd-project/entrypoints",
+    ] {
+        let (status, _, _) = send(&router, list_request(uri, None)).await;
+        assert_eq!(status, StatusCode::OK, "{uri}");
+    }
+}

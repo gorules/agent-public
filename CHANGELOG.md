@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.3](https://github.com/gorules/agent/compare/v2.0.2...v2.0.3) (2026-11-06)
+
+
+### Bug Fixes
+
+* **GRL-790:** accept calls when the release lists no access tokens ([#101](https://github.com/gorules/agent/issues/101)) ([905a270](https://github.com/gorules/agent/commit/905a27044c5d38f1b69dd4db3a48c5f689061c90))
+
 ## [2.0.2](https://github.com/gorules/agent/compare/v2.0.1...v2.0.2) (2026-10-09)
 
 

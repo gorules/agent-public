@@ -57,8 +57,8 @@ impl ImmutableLoader {
 
     pub fn can_access(&self, token: &str) -> bool {
         self.release_data()
-            .map(|rd| rd.access_tokens.iter().any(|at| at.deref().eq(token)))
-            .unwrap_or(true)
+            .filter(|rd| !rd.access_tokens.is_empty())
+            .is_none_or(|rd| rd.access_tokens.iter().any(|at| at.deref().eq(token)))
     }
 
     fn display_path(key: &str, graph: &FileDecisionGraph) -> Arc<str> {
@@ -295,6 +295,36 @@ mod tests {
     use super::*;
     use crate::data::extended_decision::FileContent;
     use serde_json::json;
+
+    /// A release that lists access tokens requires one; one that lists
+    /// none (or says nothing of them) is open.
+    #[test]
+    fn calls_need_a_token_only_when_the_release_lists_them() {
+        let loader = |project: serde_json::Value| {
+            ImmutableLoader::new(
+                HashMap::new(),
+                HashMap::new(),
+                ReleaseData::from_json_reader(project.to_string().as_bytes()),
+            )
+        };
+        let listed = loader(json!({ "project": { "id": "p-1" }, "accessTokens": ["t-1"] }));
+        assert!(listed.can_access("t-1"));
+        assert!(!listed.can_access(""));
+        assert!(!listed.can_access("other"));
+        let none = loader(json!({ "project": { "id": "p-1" } }));
+        assert!(none.can_access(""));
+        assert!(loader(json!({ "accessTokens": [] })).can_access(""));
+
+        // CI/CD delivery ships a v2 manifest without `accessTokens`.
+        let ci_cd = loader(json!({
+            "version": "2",
+            "project": { "id": "p-1", "key": "shipping" },
+            "release": { "id": "r-1", "version": "1.0.0" },
+            "environment": { "id": "e-1", "key": "production" }
+        }));
+        assert!(ci_cd.release_data().is_some());
+        assert!(ci_cd.can_access(""));
+    }
 
     fn graph(value: serde_json::Value, display_path: &str) -> (String, FileDecisionGraph) {
         let FileContent::Graph(mut graph) = serde_json::from_value::<FileContent>(value).unwrap()
